@@ -6,9 +6,12 @@ import struct
 import smbus
 import sys
 import time
+import RPi.GPIO as GPIO
+
 
 
 I2C_address=0x36
+GPIO_PORT=4
 
 class GeekwormT208():
 
@@ -23,6 +26,9 @@ class GeekwormT208():
         self._ros_pub_battery_state = rospy.Publisher('/battery_state', BatteryState, queue_size=5)
         self._design_capacity = design_capacity
         self._bus = smbus.SMBus(1) # 0 = /dev/i2c-0 (port I2C0), 1 = /dev/i2c-1 (port I2C1)
+
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(GPIO_PORT, GPIO.IN)
 
         rospy.loginfo("Geekworm T208 UPS node publishers corrrectly initialized")
 
@@ -45,12 +51,23 @@ class GeekwormT208():
             soc = self.readCapacity()
             battery_status = BatteryState()
             battery_status.voltage = bus_voltage
+            battery_status.cell_voltage = [bus_voltage, bus_voltage, bus_voltage, bus_voltage, bus_voltage, bus_voltage]
             battery_status.percentage = soc
             battery_status.location = "UPS"
             battery_status.present = True
+            if soc == 100:
+                battery_status.power_supply_status = BatteryState.POWER_SUPPLY_STATUS_FULL
+            else:
+                if GPIO.input(GPIO_PORT):
+                    battery_status.power_supply_status = BatteryState.POWER_SUPPLY_STATUS_DISCHARGING
+                else:
+                    battery_status.power_supply_status = BatteryState.POWER_SUPPLY_STATUS_CHARGING
             if self._design_capacity != None:
                 battery_status.design_capacity = self._design_capacity
+            battery_status.present = True
+            battery_status.power_supply_health = BatteryState.POWER_SUPPLY_HEALTH_GOOD
             battery_status.power_supply_technology = BatteryState.POWER_SUPPLY_TECHNOLOGY_LION
+            battery_status.serial_number = 'N/A'
             # print(battery_status)
             self._ros_pub_battery_state.publish(battery_status)
             r.sleep()
