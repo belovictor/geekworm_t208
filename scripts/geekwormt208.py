@@ -49,6 +49,8 @@ class GeekwormT208():
         while not rospy.is_shutdown():
             bus_voltage = self.readVoltage()
             soc = self.readCapacity()
+            if soc > 100:
+                soc = 100
             battery_status = BatteryState()
             battery_status.voltage = bus_voltage
             battery_status.cell_voltage = [bus_voltage, bus_voltage, bus_voltage, bus_voltage, bus_voltage, bus_voltage]
