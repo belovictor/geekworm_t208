@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+    <node name="geekwormT208" pkg="geekworm_t208" type="geekwormt208.py" output="screen">
+    </node>
+</launch>
